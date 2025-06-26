@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Launch TextTools",
+      "program": "${workspaceFolder}/build/TextTools.exe",
+      "cwd": "${workspaceFolder}/build",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "preLaunchTask": "build"
+    }
+  ]
+}
