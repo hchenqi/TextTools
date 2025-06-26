@@ -1,5 +1,4 @@
 #include <hb.h>
-#include <hb-ft.h>
 #include <iostream>
 
 int main() {
@@ -9,18 +8,9 @@ int main() {
     hb_buffer_add_utf8(buffer, text, -1, 0, -1);
     hb_buffer_guess_segment_properties(buffer);
 
-	FT_Library ft_library;
-    if (FT_Init_FreeType(&ft_library)) {
-        std::cerr << "Failed to init FreeType\n";
-        return 1;
-    }
-    FT_Face ft_face;
-    if (FT_New_Face(ft_library, "C:\\Windows\\Fonts\\arial.ttf", 0, &ft_face)) {
-        std::cerr << "Failed to load font\n";
-        return 1;
-    }
-    FT_Set_Char_Size(ft_face, 0, 16 * 64, 300, 300);
-    hb_font_t* font = hb_ft_font_create(ft_face, nullptr);
+    hb_blob_t *blob = hb_blob_create_from_file("C:\\Windows\\Fonts\\arial.ttf");
+    hb_face_t *face = hb_face_create(blob, 0);
+    hb_font_t *font = hb_font_create(face);
 
     hb_shape(font, buffer, nullptr, 0);
 
@@ -35,10 +25,10 @@ int main() {
                   << ", y_advance=" << pos[i].y_advance << "\n";
     }
 
-    hb_buffer_destroy(buffer);
     hb_font_destroy(font);
-    FT_Done_Face(ft_face);
-    FT_Done_FreeType(ft_library);
+    hb_face_destroy(face);
+    hb_blob_destroy(blob);
+    hb_buffer_destroy(buffer);
 
     return 0;
 }
