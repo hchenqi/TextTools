@@ -1,5 +1,10 @@
 {
   "dependencies": [
-    "harfbuzz"
+    {
+      "name": "harfbuzz",
+      "features": [
+        "directwrite"
+      ]
+    }
   ]
 }
