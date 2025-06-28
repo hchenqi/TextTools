@@ -86,11 +86,12 @@ struct GlyphRunFigure : Figure {
 	GlyphRunFigure(const GlyphRun& glyph_run, Point origin, Color color) : glyph_run(glyph_run), origin(origin), color(color) {}
 
 	virtual void DrawOn(RenderTarget& target, Point point) const override {
-		target.DrawGlyphRun(
+		target.DrawGlyphRunWithColorSupport(
 			AsD2DPoint(origin),
 			&glyph_run.data,
+			nullptr,
 			&GetD2DSolidColorBrush(color),
-			DWRITE_MEASURING_MODE_NATURAL
+			nullptr
 		);
 	}
 };
@@ -105,7 +106,7 @@ struct MainFrameStyle : public TitleBarFrame::Style {
 
 class Canvas : public Placeholder<Assigned, Assigned> {
 public:
-	Canvas() : font("C:\\Windows\\Fonts\\arial.ttf"), glyph_run(font, 50, "Hello, HarfBuzz! 🤕") {}
+	Canvas() : font("C:\\Windows\\Fonts\\seguiemj.ttf"), glyph_run(font, 50, "Hello, HarfBuzz! 🤕") {}
 
 protected:
 	Size size;
