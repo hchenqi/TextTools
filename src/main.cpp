@@ -13,10 +13,25 @@
 using namespace WndDesign;
 
 
-struct MainFrameStyle : public TitleBarFrame::Style {
-	MainFrameStyle() {
-		title.text.assign(L"TextTools");
+class HBFont {
+private:
+	hb_blob_t* blob;
+	hb_face_t* face;
+	hb_font_t* font;
+public:
+	HBFont(const char* file) {
+		blob = hb_blob_create_from_file(file);
+		face = hb_face_create(blob, 0);
+		font = hb_font_create(face);
 	}
+	~HBFont() {
+		hb_font_destroy(font);
+		hb_face_destroy(face);
+		hb_blob_destroy(blob);
+	}
+public:
+	hb_face_t* get_face() const { return face; }
+	hb_font_t* get_font() const { return font; }
 };
 
 class GlyphRun {
@@ -26,8 +41,17 @@ private:
 	std::vector<UINT16> glyph_indices;
 	std::vector<FLOAT> advances;
 	std::vector<DWRITE_GLYPH_OFFSET> offsets;
+
 public:
-	GlyphRun(ref_ptr<hb_face_t> font_face, float font_size, ref_ptr<hb_buffer_t> buffer) {
+	GlyphRun(const HBFont& font, float font_size, const char* text) {
+		hb_buffer_t* buffer = hb_buffer_create();
+		hb_buffer_add_utf8(buffer, text, -1, 0, -1);
+		hb_buffer_guess_segment_properties(buffer);
+
+		hb_font_set_scale(font.get_font(), font_size * 64, font_size * 64);
+
+		hb_shape(font.get_font(), buffer, nullptr, 0);
+
 		unsigned int count;
 		hb_glyph_info_t* info = hb_buffer_get_glyph_infos(buffer, &count);
 		hb_glyph_position_t* pos = hb_buffer_get_glyph_positions(buffer, &count);
@@ -40,7 +64,8 @@ public:
 			offsets[i].advanceOffset = pos[i].x_offset / 64.0f;
 			offsets[i].ascenderOffset = -pos[i].y_offset / 64.0f;
 		}
-		data.fontFace = hb_directwrite_face_get_font_face(font_face);
+
+		data.fontFace = hb_directwrite_face_get_font_face(font.get_face());
 		data.fontEmSize = font_size;
 		data.glyphCount = count;
 		data.glyphIndices = glyph_indices.data();
@@ -48,6 +73,8 @@ public:
 		data.glyphOffsets = offsets.data();
 		data.isSideways = false;
 		data.bidiLevel = 0;
+
+		hb_buffer_destroy(buffer);
 	}
 };
 
@@ -68,39 +95,18 @@ struct GlyphRunFigure : Figure {
 	}
 };
 
-class HBFont {
-private:
-	hb_blob_t* blob;
-	hb_face_t* face;
-	hb_font_t* font;
-public:
-	HBFont(const char* file) {
-		blob = hb_blob_create_from_file(file);
-		face = hb_face_create(blob, 0);
-		font = hb_font_create(face);
+
+struct MainFrameStyle : public TitleBarFrame::Style {
+	MainFrameStyle() {
+		title.text.assign(L"TextTools");
 	}
-	~HBFont() {
-		hb_font_destroy(font);
-		hb_face_destroy(face);
-		hb_blob_destroy(blob);
-	}
-	hb_face_t* get_face() const { return face; }
-	hb_font_t* get_font() const { return font; }
 };
 
-GlyphRun ShapeText(const HBFont& font, const char* text) {
-	hb_buffer_t* buffer = hb_buffer_create();
-	hb_buffer_add_utf8(buffer, text, -1, 0, -1);
-	hb_buffer_guess_segment_properties(buffer);
-	hb_shape(font.get_font(), buffer, nullptr, 0);
-	GlyphRun glyph_run(font.get_face(), 20, buffer);
-	hb_buffer_destroy(buffer);
-	return glyph_run;
-}
 
 class Canvas : public Placeholder<Assigned, Assigned> {
 public:
-	Canvas() : font("C:\\Windows\\Fonts\\arial.ttf"), glyph_run(ShapeText(font, "Hello, HarfBuzz!")) {}
+	Canvas() : font("C:\\Windows\\Fonts\\arial.ttf"), glyph_run(font, 50, "Hello, HarfBuzz! 🤕") {}
+
 protected:
 	Size size;
 protected:
@@ -111,7 +117,7 @@ protected:
 	GlyphRun glyph_run;
 protected:
 	virtual void OnDraw(FigureQueue& figure_queue, Rect draw_region) override {
-		figure_queue.add(point_zero, new GlyphRunFigure(glyph_run, Point(0, 30), Color(Color::Green, 0x80)));
+		figure_queue.add(point_zero, new GlyphRunFigure(glyph_run, Point(0, size.height / 2), Color(Color::Green, 0x80)));
 	}
 };
 
